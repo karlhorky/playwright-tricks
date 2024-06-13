@@ -33,8 +33,7 @@ function html(strings: TemplateStringsArray, ...values: unknown[]) {
 
 test('PDF has screenshot', async ({ page }) => {
   // Go to page without Content-Security-Policy header, to avoid
-  // CSP restrictions preventing loading of scripts on
-  // https://mozilla.github.io
+  // CSP restrictions preventing loading of scripts on https://mozilla.github.io
   await page.goto('about:blank');
 
   await page.setContent(html`
