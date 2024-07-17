@@ -15,6 +15,26 @@ for (const lazyImage of lazyImages) {
 }
 ```
 
+Be aware, [using `.all()` can be problematic if new images are being added, removed, shown or hidden while the test code is running](https://github.com/microsoft/playwright/issues/31737).
+
+One workaround for this is to assert the length of the `.all()` array (if you know it) to wait for it to stabilize:
+
+```ts
+const lazyImagesLocator = page.locator('img[loading="lazy"]:visible');
+
+// Assert on length to wait for image visibility to stabilize
+// after client-side JavaScript hides some images
+// https://github.com/microsoft/playwright/issues/31737#issuecomment-2233775909
+await expect(lazyImagesLocator).toHaveCount(13);
+
+const lazyImages = await lazyImagesLocator.all();
+
+for (const lazyImage of lazyImages) {
+  await lazyImage.scrollIntoViewIfNeeded();
+  await expect(lazyImage).not.toHaveJSProperty('naturalWidth', 0);
+}
+```
+
 ## Screenshot Comparison Tests of PDFs
 
 Playwright does not (as of June 2024) have support for [visual comparison testing](https://playwright.dev/docs/test-snapshots) with PDFs.
