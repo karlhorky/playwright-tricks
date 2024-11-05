@@ -2,6 +2,41 @@
 
 A collection of helpful tricks for [Playwright](https://playwright.dev/) tests
 
+## Interoperable Text Snapshots
+
+Playwright does not add a newline at the end of files created with [non-image snapshots](https://playwright.dev/docs/test-snapshots#non-image-snapshots) (text snapshots, created with `expect().toMatchSnapshot()`), as discussed in [`microsoft/playwright#33416`](https://github.com/microsoft/playwright/issues/33416).
+
+This means that the following code will create a file `snapshot.txt` with the content `abc`, without any newline at the end:
+
+```ts
+import { test, expect } from '@playwright/test';
+
+test('example test', () => {
+  expect('abc').toMatchSnapshot('snapshot.txt');
+});
+```
+
+Snapshot files without newlines at the ends are problematic because commonly-used software like the GitHub "Edit in Place" feature and other common editor configurations will silently add a newline in the edge case of editing a snapshot file, which will cause the snapshot test to fail in a confusing way.
+
+Also, [POSIX and *nix tools assume newlines at the end of files](https://stackoverflow.com/questions/729692/why-should-text-files-end-with-a-newline).
+
+Unless the Playwright team reverses [their "working as intended" decision](https://github.com/microsoft/playwright/issues/33416#issuecomment-2455936144) and adds a fix to make text snapshots interoperable Create interoperable, this needs to be worked around.
+
+[The current workaround](https://github.com/microsoft/playwright/issues/33416#issuecomment-2456363012) to create robust text snapshots with Playwright is to manually adding a newline at the end of the string passed to `expect()`:
+
+```ts
+import { test, expect } from '@playwright/test';
+
+test('example test', () => {
+  expect(
+    'abc' +
+      // Make Playwright snapshot file interoperable
+      // - https://github.com/microsoft/playwright/issues/33416#issuecomment-2456363012
+      '\n',
+  ).toMatchSnapshot('snapshot.txt');
+});
+```
+
 ## Load All Lazy Images
 
 Scroll to all visible lazy-loaded images and wait for [successful loading of image](#test-image-loading):
