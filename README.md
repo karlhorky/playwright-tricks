@@ -4,7 +4,7 @@ A collection of helpful tricks for [Playwright](https://playwright.dev/) tests
 
 ## Interoperable Text Snapshots
 
-Playwright does not add a newline at the end of files created with [non-image snapshots](https://playwright.dev/docs/test-snapshots#non-image-snapshots) (text snapshots, created with `expect().toMatchSnapshot()`), as discussed in [`microsoft/playwright#33416`](https://github.com/microsoft/playwright/issues/33416).
+Playwright does not add a newline at the end of files created with [non-image snapshots](https://playwright.dev/docs/test-snapshots#non-image-snapshots) - the text snapshots created with `expect().toMatchSnapshot()` - as discussed in [`microsoft/playwright#33416`](https://github.com/microsoft/playwright/issues/33416).
 
 This means that the following code will create a file `snapshot.txt` with the content `abc`, without any newline at the end:
 
