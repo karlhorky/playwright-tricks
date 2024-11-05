@@ -18,7 +18,7 @@ test('example test', () => {
 
 Snapshot files without newlines at the ends are problematic because commonly-used software like the GitHub "Edit in Place" feature and other common editor configurations will silently add a newline in the edge case of editing a snapshot file, which will cause the snapshot test to fail in a confusing way.
 
-Also, [POSIX and *nix tools assume newlines at the end of files](https://stackoverflow.com/questions/729692/why-should-text-files-end-with-a-newline).
+Also, [POSIX and *nix tools assume newlines at the end of files](https://stackoverflow.com/questions/729692/why-should-text-files-end-with-a-newline), so Playwright text snapshots will not play nice with those.
 
 Unless the Playwright team reverses [their "working as intended" decision](https://github.com/microsoft/playwright/issues/33416#issuecomment-2455936144) and adds a fix to make text snapshots interoperable Create interoperable, this needs to be worked around.
 
