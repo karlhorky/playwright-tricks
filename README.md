@@ -31,6 +31,8 @@ const config: PlaywrightTestConfig = {
 export default config;
 ```
 
+To import SCSS or other file types in Playwright tests, find a suitable Node.js ESM loader for the file type and use `register()` from `node:module` in `playwright.config.ts`.
+
 ## Interoperable Text Snapshots
 
 Playwright does not add a newline at the end of files created with [non-image snapshots](https://playwright.dev/docs/test-snapshots#non-image-snapshots) - the text snapshots created with `expect().toMatchSnapshot()` - as discussed in [`microsoft/playwright#33416`](https://github.com/microsoft/playwright/issues/33416).
