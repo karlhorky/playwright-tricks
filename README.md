@@ -2,6 +2,35 @@
 
 A collection of helpful tricks for [Playwright](https://playwright.dev/) tests
 
+## Import Custom File Types in Tests
+
+As of Sep 2025, Playwright doesn't support importing file types beyond JavaScript and TypeScript in tests:
+
+- [[Feature] Support adding custom loaders to the test runner `#26822`](https://github.com/microsoft/playwright/issues/26822)
+- [[Feature]: Support importing SCSS in ESM `#31689`](https://github.com/microsoft/playwright/issues/31689)
+
+To import file types like MDX, image files, SCSS and others, use Node.js ESM loaders via [Customization Hooks](https://nodejs.org/api/module.html#customization-hooks) APIs in `playwright.config.ts`.
+
+For example, [`@mdx-js/node-loader`](https://www.npmjs.com/package/@mdx-js/node-loader) for MDX files and [`@nodejs-loaders/media`](https://www.npmjs.com/package/@nodejs-loaders/media) for image files:
+
+`playwright.config.ts`
+
+```ts
+import { register } from 'node:module';
+import type { PlaywrightTestConfig } from '@playwright/test';
+
+// Node.js ESM loaders for image files and MDX imported by test files
+// - https://github.com/microsoft/playwright/issues/26822#issuecomment-2692835230
+register('@nodejs-loaders/media', import.meta.url);
+register('@mdx-js/node-loader', import.meta.url);
+
+const config: PlaywrightTestConfig = {
+  // ...
+};
+ 
+export default config;
+```
+
 ## Interoperable Text Snapshots
 
 Playwright does not add a newline at the end of files created with [non-image snapshots](https://playwright.dev/docs/test-snapshots#non-image-snapshots) - the text snapshots created with `expect().toMatchSnapshot()` - as discussed in [`microsoft/playwright#33416`](https://github.com/microsoft/playwright/issues/33416).
