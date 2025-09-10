@@ -9,7 +9,7 @@ As of Sep 2025, Playwright doesn't support importing file types beyond JavaScrip
 - [[Feature] Support adding custom loaders to the test runner `#26822`](https://github.com/microsoft/playwright/issues/26822)
 - [[Feature]: Support importing SCSS in ESM `#31689`](https://github.com/microsoft/playwright/issues/31689)
 
-To import file types like MDX, image files, SCSS and others, use Node.js ESM loaders via [Customization Hooks](https://nodejs.org/api/module.html#customization-hooks) APIs in `playwright.config.ts`.
+To import file types like MDX, image files, SCSS and others in Playwright tests, use Node.js ESM loaders via [Customization Hooks](https://nodejs.org/api/module.html#customization-hooks) APIs in `playwright.config.ts`.
 
 For example, [`@mdx-js/node-loader`](https://www.npmjs.com/package/@mdx-js/node-loader) for MDX files and [`@nodejs-loaders/media`](https://www.npmjs.com/package/@nodejs-loaders/media) for image files:
 
