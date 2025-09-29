@@ -2,7 +2,7 @@
 
 A collection of helpful tricks for [Playwright](https://playwright.dev/) tests
 
-## Import Custom File Types in Tests
+## Import custom file types in tests
 
 As of Sep 2025, Playwright doesn't support importing file types beyond JavaScript and TypeScript in tests:
 
@@ -33,7 +33,7 @@ export default config;
 
 To import SCSS or other file types in Playwright tests, find a suitable Node.js ESM loader for the file type and use `register()` from `node:module` in `playwright.config.ts`.
 
-## Interoperable Text Snapshots
+## Interoperable text snapshots
 
 Playwright does not add a newline at the end of files created with [non-image snapshots](https://playwright.dev/docs/test-snapshots#non-image-snapshots) - the text snapshots created with `expect().toMatchSnapshot()` - as discussed in [`microsoft/playwright#33416`](https://github.com/microsoft/playwright/issues/33416).
 
@@ -68,7 +68,7 @@ test('example test', () => {
 });
 ```
 
-## Load All Lazy Images
+## Load all lazy images
 
 Scroll to all visible lazy-loaded images and wait for [successful loading of image](#test-image-loading):
 
@@ -101,7 +101,7 @@ for (const lazyImage of lazyImages) {
 }
 ```
 
-## Screenshot Comparison Tests of PDFs
+## Screenshot comparison tests of PDFs
 
 Playwright does not (as of June 2024) have support for [visual comparison testing](https://playwright.dev/docs/test-snapshots) with PDFs.
 
@@ -165,7 +165,66 @@ test('PDF has screenshot', async ({ page }) => {
 });
 ```
 
-## Test Image Loading
+## Sync Playwright version from `package.json` to GitHub Actions container image
+
+When using GitHub Actions, Playwright tests should be run [via containers using the official Microsoft Docker image](https://playwright.dev/docs/ci#via-containers) for performance - the slower alternative of [installing browsers with `playwright install --with-deps`](https://playwright.dev/docs/ci#on-pushpull_request) can take [5x as long](https://github.com/karlhorky/repro-dynamic-playwright-container-image#why) or longer versus the Docker image.
+
+However, the Docker container approach hardcodes the Playwright version in a new place in the codebase - the GitHub Actions workflow files - requiring effort or automation to keep the Playwright versions in sync in both `package.json` and the GitHub Actions workflow files. There is a high chance of these versions getting out of sync as Playwright is upgraded.
+
+To sync the Playwright version from `package.json` to the container image used in GitHub Actions, make sure you use an exact version of Playwright in your `package.json`:
+
+`package.json`
+
+```json
+{
+  "devDependencies": {
+    "@playwright/test": "1.55.0"
+  }
+}
+```
+
+...and then read out the version with `yq` in a minimal job, set it as output and pass it along to the second job for usage to set the Docker image version in the [`jobs.<job_id>.container.image`](https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/run-jobs-in-a-container#defining-the-container-image) expression:
+
+`.github/workflows/ci-container.yml`
+
+```yaml
+name: CI
+on: [push]
+jobs:
+  resolve-playwright-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps['resolve-playwright-version'].outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: resolve-playwright-version
+        id: resolve-playwright-version
+        run: |
+          version="$(yq -r '.devDependencies["@playwright/test"] // .dependencies["@playwright/test"] // ""' package.json)"
+          test -n "$version" || { echo "No @playwright/test version found in package.json"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  ci:
+    runs-on: ubuntu-latest
+    needs: resolve-playwright-version
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs['resolve-playwright-version'].outputs.version }}
+      options: --user 1001
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 'lts/*'
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm playwright test
+```
+
+Reproduction repo: https://github.com/karlhorky/repro-dynamic-playwright-container-image
+
+## Test image loading
 
 Test that `<img>` elements have a `src` attribute that is reachable and responds with image data:
 
