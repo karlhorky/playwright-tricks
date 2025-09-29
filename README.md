@@ -167,11 +167,11 @@ test('PDF has screenshot', async ({ page }) => {
 
 ## Sync Playwright version from `package.json` to GitHub Actions container image
 
-When using GitHub Actions, Playwright tests should be run [via containers using the official Microsoft Docker image](https://playwright.dev/docs/ci#via-containers) for performance - the slower alternative of [installing browsers with `playwright install --with-deps`](https://playwright.dev/docs/ci#on-pushpull_request) can take [5x as long](https://github.com/karlhorky/repro-dynamic-playwright-container-image#why) or longer versus the Docker image.
+When using GitHub Actions, Playwright tests should be run [via containers using the official Microsoft Docker image](https://playwright.dev/docs/ci#via-containers) for performance - the slower alternative of [installing browsers with `playwright install --with-deps`](https://playwright.dev/docs/ci#on-pushpull_request) can take [5x as long](https://github.com/karlhorky/repro-dynamic-playwright-container-image#why) (or even longer) compared to the Docker image.
 
 However, the Docker container approach hardcodes the Playwright version in a new place in the codebase - the GitHub Actions workflow files - requiring effort or automation to keep the Playwright versions in sync in both `package.json` and the GitHub Actions workflow files. There is a high chance of these versions getting out of sync as Playwright is upgraded.
 
-To sync the Playwright version from `package.json` to the container image used in GitHub Actions, make sure you use an exact version of Playwright in your `package.json`:
+To sync the Playwright version from `package.json` to the container image used in GitHub Actions, first make sure you use an exact version of Playwright in your `package.json` - this will be the single source of truth:
 
 `package.json`
 
@@ -183,7 +183,7 @@ To sync the Playwright version from `package.json` to the container image used i
 }
 ```
 
-...and then read out the version with `yq` in a minimal job, set it as output and pass it along to the second job for usage to set the Docker image version in the [`jobs.<job_id>.container.image`](https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/run-jobs-in-a-container#defining-the-container-image) expression:
+Once you have the exact version in `package.json`, read out the version with `yq` in a minimal job, set it as output and then use the output in the second job to set the Docker image version in the [`jobs.<job_id>.container.image`](https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/run-jobs-in-a-container#defining-the-container-image) expression:
 
 `.github/workflows/ci-container.yml`
 
