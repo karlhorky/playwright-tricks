@@ -149,7 +149,7 @@ Example Playwright logs after failure:
 
 By default, [Playwright will pipe any stderr output](https://playwright.dev/docs/test-webserver#:~:text=webserver%20environment%20variable.-,stderr,the%20process%20stderr%20or%20ignore%20it.%20Defaults%20to%20%22pipe%22.,-stdout) from any server configured in `webServer` to the process stdout, to show errors in the Playwright logs.
 
-However, often stderr from a server indicates some problem which should be investigated and fixed. One way of achieving this would be to fail the currently running test upon any stderr output from the server, as proposed in [Playwright issue #38001](https://github.com/microsoft/playwright/issues/38001).
+However, often stderr from a server indicates some problem which should be investigated and fixed. One way of achieving this is to fail the currently running test upon any stderr output from the server, as proposed in [Playwright issue #38001](https://github.com/microsoft/playwright/issues/38001).
 
 Until Playwright implements a first-class solution for this, failing the currently running test on stderr output from a server can be achieved in many cases by creating a wrapper script `exit-on-stderr.ts` which will exit the server on any stderr output:
 
