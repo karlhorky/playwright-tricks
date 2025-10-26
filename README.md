@@ -246,6 +246,11 @@ Example Playwright logs when using `exit-on-stderr.ts` (ideally paired with [Fai
     playwright/pernExtensiveImmersiveStudentBrowses.spec.ts:95:3 › PERN Extensive (Immersive) student browses › PERN Extensive (Immersive) student browses 
 ```
 
+Downsides:
+
+1. Because this isn't integrated with the Playwright test lifecycle, the test may still succeed in certain cases - eg. if the stderr occurs at the end of the test
+2. Exiting the server causes a weird disconnect in Playwright UI Mode, where all tests re-run afterwards will fail
+
 ## Import custom file types in tests
 
 As of Sep 2025, Playwright doesn't support importing file types beyond JavaScript and TypeScript in tests:
