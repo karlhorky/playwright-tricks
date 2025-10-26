@@ -2,6 +2,253 @@
 
 A collection of helpful tricks for [Playwright](https://playwright.dev/) tests
 
+## Fail test on internal server error, thrown errors, `console.log()`, `console.error()`
+
+Playwright by default will ignore responses with HTTP 500 Internal Server Error, any JavaScript thrown errors on the webpage and usage of `console.log()` and `console.error()` (see [Playwright issue #27277](https://github.com/microsoft/playwright/issues/27277))
+
+To make tested applications more robust, fail the currently running test by creating and using a `throwOnErrorsOrConsoleLogging()` function:
+
+`util/playwright.ts`
+
+```ts
+import type { Page } from '@playwright/test';
+
+type PagePathnamesToIgnoredMessages = [
+  pagePathname: RegExp,
+  ignoredMessagePatterns: RegExp[],
+][];
+
+type LocationUrlsToIgnoredMessages = [
+  locationUrl: RegExp,
+  ignoredMessagePatterns: RegExp[],
+][];
+
+/**
+ * Throw error on any unhandled page errors and console messages
+ * (eg. console.log(), console.error(), etc), incl. Content
+ * Security Policy (CSP) violations
+ *
+ * https://github.com/microsoft/playwright/issues/27277#issue-1910304067
+ */
+export function throwOnErrorsOrConsoleLogging(
+  page: Page,
+  options?: {
+    pagePathnamesToIgnoredMessages?: PagePathnamesToIgnoredMessages;
+    locationUrlsToIgnoredMessages?: LocationUrlsToIgnoredMessages;
+  },
+) {
+  page.on('response', (response) => {
+    if (response.status() === 500) {
+      throw new Error(`HTTP 500 Internal Server Error for ${response.url()}`);
+    }
+  });
+
+  page.on('pageerror', (error) => {
+    throw error;
+  });
+
+  page.on('console', (message) => {
+    const messageText = message.text();
+
+    const pagePathnamesToIgnoredMessages: PagePathnamesToIgnoredMessages = 
+      options?.pagePathnamesToIgnoredMessages || [];
+
+    const pathname = new URL(message.page()?.url() || '').pathname;
+
+    for (const [
+      pagePathnamePattern,
+      ignoredMessagePatterns,
+    ] of pagePathnamesToIgnoredMessages) {
+      if (
+        pagePathnamePattern.test(pathname) &&
+        ignoredMessagePatterns.some((pattern) => pattern.test(messageText))
+      ) {
+        return;
+      }
+    }
+
+    const pagePathnamesToIgnoredMessages: PagePathnamesToIgnoredMessages =
+      options?.pagePathnamesToIgnoredMessages || [];
+
+    const locationUrl = message.location().url;
+
+    for (const [
+      locationUrlPattern,
+      ignoredMessagePatterns,
+    ] of locationUrlsToIgnoredMessages) {
+      if (
+        locationUrlPattern.test(locationUrl) &&
+        ignoredMessagePatterns.some((pattern) => pattern.test(messageText))
+      ) {
+        return;
+      }
+    }
+
+    throw new Error(
+      `${messageText} (page pathname: ${pathname}, location URL: ${locationUrl})`,
+    );
+  });
+}
+```
+
+To use the function, import the function and call it at the top of your test:
+
+```ts
+test('Assessor assesses students', async ({ page }) => {
+  throwOnErrorsOrConsoleLogging(page);
+```
+
+To disable errors for a specific path or URL, pass in the arrays `pagePathnamesToIgnoredMessages` or `locationUrlsToIgnoredMessages` (or adjust them in `util/playwright.ts`): 
+
+```ts
+throwOnErrorsOrConsoleLogging(page, {
+  pagePathnamesToIgnoredMessages: [
+    [
+      /^\/admin\/student-assessments-with-a-typo-in-it$/,
+      [
+        // Ignore expected HTTP 404 errors
+        /^Failed to load resource: the server responded with a status of 404 \(Not Found\)$/,
+      ],
+    ],
+  ],
+  locationUrlsToIgnoredMessages: [
+    /^https:\/\/mozilla\.github\.io\/pdf\.js\/build\/pdf\.mjs$/,
+    [
+      // Ignore PDF.js console.error() message
+      /^Warning: Setting up fake worker\.$/,
+    ],
+  ],
+});
+```
+
+Example Playwright logs after failure:
+
+```
+  1) playwright/pernExtensiveImmersiveStudentBrowses.spec.ts:95:3 › PERN Extensive (Immersive) student browses › PERN Extensive (Immersive) student browses 
+
+    Error: Failed to load resource: net::ERR_CONNECTION_REFUSED (page pathname: /pern-extensive-immersive-fall-2024-atvie/appointments/auth-129, location URL: http://localhost:3000/campuses/atvie?_rsc=15uxf)
+
+       at util/playwright.ts:169
+
+      167 |     }
+      168 |
+    > 169 |     throw new Error(
+          |           ^
+      170 |       `${messageText} (page pathname: ${pathname}, location URL: ${locationUrl})`,
+      171 |     );
+      172 |   });
+        at Page.<anonymous> (/Users/k/p/courses/packages/learn.upleveled.io/util/playwright.ts:169:11)
+
+    ─────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    playwright/pernExtensiveImmersiveStudentBrowses.spec.ts:95:3 › PERN Extensive (Immersive) student browses › PERN Extensive (Immersive) student browses 
+```
+
+## Fail test on `webServer` stderr
+
+By default, [Playwright will pipe any stderr output](https://playwright.dev/docs/test-webserver#:~:text=webserver%20environment%20variable.-,stderr,the%20process%20stderr%20or%20ignore%20it.%20Defaults%20to%20%22pipe%22.,-stdout) from any server configured in `webServer` to the process stdout, to show errors in the Playwright logs.
+
+However, often stderr from a server indicates some problem which should be investigated and fixed. One way of achieving this would be to fail the currently running test upon any stderr output from the server, as proposed in [Playwright issue #38001](https://github.com/microsoft/playwright/issues/38001).
+
+Until Playwright implements a first-class solution for this, failing the currently running test on stderr output from a server can be achieved in many cases by creating a wrapper script `exit-on-stderr.ts` which will exit the server on any stderr output:
+
+`exit-on-stderr.ts`
+
+```ts
+#!/usr/bin/env node
+
+/* eslint-disable no-console -- Allow console logging in script
+ */
+
+import { spawn } from 'node:child_process';
+
+const [cmd, ...args] = process.argv.slice(2);
+
+if (!cmd) {
+  console.error('Usage: ./exit-on-stderr.ts <command> [args...]');
+  process.exit(1);
+}
+
+const child = spawn(cmd, args, { stdio: ['inherit', 'pipe', 'pipe'] });
+
+child.stdout.pipe(process.stdout);
+child.stderr.once('data', (data: Buffer) => {
+  process.stderr.write(data);
+  process.stderr.write(
+    '[exit-on-stderr] Detected stderr output from child process, exiting.',
+  );
+  // Avoid Playwright overwriting [exit-on-stderr] message
+  process.stderr.write('\n\n');
+
+  child.kill();
+  process.exit(1);
+});
+
+child.on('exit', (code) => process.exit(code ?? 1));
+```
+
+Create the script above, make it executable and update the Playwright `webServer` configuration to use the script using at least Node.js v22.18.0+:
+
+```bash
+chmod +x ./exit-on-stderr.ts
+```
+
+```diff
+ import type { PlaywrightTestConfig } from '@playwright/test';
+ 
+ const config: PlaywrightTestConfig = {
+   webServer: [
+     {
+-      command: 'pnpm run frontend',
++      command: './exit-on-stderr.ts pnpm run frontend',
+       env: {
+         PLAYWRIGHT: 'true',
+       },
+       port: 3000,
+     },
+     {
+-      command: 'pnpm run backend',
++      command: './exit-on-stderr.ts pnpm run backend',
+       port: 3010,
+     },
+   ],
+ };
+
+ export default config;
+```
+
+Example Playwright logs when using `exit-on-stderr.ts` (ideally paired with [Fail test on internal server error, thrown errors, `console.log()`, `console.error()`](#fail-test-on-internal-server-error-thrown-errors-consolelog-consoleerror)):
+
+```bash
+[WebServer] GET /student-assessments 304 20.496 ms - -
+[WebServer]  ⨯ TypeError: Cannot read properties of undefined (reading 'githubRepositoryOwner')
+[WebServer]     at i (../learn.upleveled.io/.next/server/chunks/curriculumModules18.js:1:56834)
+[WebServer]     at stringify (<anonymous>) {
+[WebServer]   digest: '370942199'
+[WebServer] }
+[WebServer] [exit-on-stderr] Detected stderr output from child process, exiting.
+  1) playwright/pernExtensiveImmersiveStudentBrowses.spec.ts:95:3 › PERN Extensive (Immersive) student browses › PERN Extensive (Immersive) student browses 
+
+    Error: Failed to load resource: net::ERR_CONNECTION_REFUSED (page pathname: /pern-extensive-immersive-fall-2024-atvie/appointments/auth-129, location URL: http://localhost:3000/campuses/atvie?_rsc=15uxf)
+
+       at util/playwright.ts:169
+
+      167 |     }
+      168 |
+    > 169 |     throw new Error(
+          |           ^
+      170 |       `${messageText} (page pathname: ${pathname}, location URL: ${locationUrl})`,
+      171 |     );
+      172 |   });
+        at Page.<anonymous> (/Users/k/p/courses/packages/learn.upleveled.io/util/playwright.ts:169:11)
+
+    ─────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    playwright/pernExtensiveImmersiveStudentBrowses.spec.ts:95:3 › PERN Extensive (Immersive) student browses › PERN Extensive (Immersive) student browses 
+```
+
 ## Import custom file types in tests
 
 As of Sep 2025, Playwright doesn't support importing file types beyond JavaScript and TypeScript in tests:
