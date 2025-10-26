@@ -28,7 +28,7 @@ type LocationUrlsToIgnoredMessages = [
  * (eg. console.log(), console.error(), etc), incl. Content
  * Security Policy (CSP) violations
  *
- * https://github.com/microsoft/playwright/issues/27277#issue-1910304067
+ * https://github.com/karlhorky/playwright-tricks/blob/main/README.md#fail-test-on-internal-server-error-thrown-errors-consolelog-consoleerror
  */
 export function throwOnErrorsOrConsoleLogging(
   page: Page,
@@ -157,6 +157,8 @@ Until Playwright implements a first-class solution for this, failing the current
 
 ```ts
 #!/usr/bin/env node
+
+// https://github.com/karlhorky/playwright-tricks#fail-test-on-webserver-stderr
 
 import { spawn } from 'node:child_process';
 
