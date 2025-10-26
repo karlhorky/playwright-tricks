@@ -158,9 +158,6 @@ Until Playwright implements a first-class solution for this, failing the current
 ```ts
 #!/usr/bin/env node
 
-/* eslint-disable no-console -- Allow console logging in script
- */
-
 import { spawn } from 'node:child_process';
 
 const [cmd, ...args] = process.argv.slice(2);
