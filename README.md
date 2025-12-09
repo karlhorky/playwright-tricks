@@ -13,15 +13,15 @@ To make tested applications more robust, fail the currently running test by crea
 ```ts
 import type { Page } from '@playwright/test';
 
-type PagePathnamesToIgnoredMessages = [
-  pagePathname: RegExp,
-  ignoredMessagePatterns: RegExp[],
-][];
+type PagePathnameIgnoredMessages = {
+  pagePathname: RegExp;
+  messages: RegExp[];
+};
 
-type LocationUrlsToIgnoredMessages = [
-  locationUrl: RegExp,
-  ignoredMessagePatterns: RegExp[],
-][];
+type LocationUrlIgnoredMessages = {
+  locationUrl: RegExp;
+  messages: RegExp[];
+};
 
 /**
  * Throw error on any unhandled page errors and console messages
@@ -33,8 +33,11 @@ type LocationUrlsToIgnoredMessages = [
 export function throwOnErrorsOrConsoleLogging(
   page: Page,
   options?: {
-    pagePathnamesToIgnoredMessages?: PagePathnamesToIgnoredMessages;
-    locationUrlsToIgnoredMessages?: LocationUrlsToIgnoredMessages;
+    ignoredErrors?: PagePathnameIgnoredMessages[];
+    ignoredConsoleMessages?: (
+      | PagePathnameIgnoredMessages
+      | LocationUrlIgnoredMessages
+    )[];
   },
 ) {
   page.on('response', (response) => {
@@ -44,41 +47,56 @@ export function throwOnErrorsOrConsoleLogging(
   });
 
   page.on('pageerror', (error) => {
+    const errorMessage = error.message;
+
+    const ignoredErrors: Exclude<typeof options, undefined>['ignoredErrors'] = [
+      ...(options?.ignoredErrors || []),
+    ];
+
+    const pathname = new URL(page.url() || '').pathname;
+
+    for (const { pagePathname, messages } of ignoredErrors) {
+      if (
+        pagePathname.test(pathname) &&
+        messages.some((pattern) => pattern.test(errorMessage))
+      ) {
+        return;
+      }
+    }
+
     throw error;
   });
 
   page.on('console', (message) => {
     const messageText = message.text();
 
-    const pagePathnamesToIgnoredMessages: PagePathnamesToIgnoredMessages = 
-      options?.pagePathnamesToIgnoredMessages || [];
+    const ignoredConsoleMessages: Exclude<
+      typeof options,
+      undefined
+    >['ignoredConsoleMessages'] = options?.ignoredConsoleMessages || [];
 
     const pathname = new URL(message.page()?.url() || '').pathname;
-
-    for (const [
-      pagePathnamePattern,
-      ignoredMessagePatterns,
-    ] of pagePathnamesToIgnoredMessages) {
-      if (
-        pagePathnamePattern.test(pathname) &&
-        ignoredMessagePatterns.some((pattern) => pattern.test(messageText))
-      ) {
-        return;
-      }
-    }
-
-    const pagePathnamesToIgnoredMessages: PagePathnamesToIgnoredMessages =
-      options?.pagePathnamesToIgnoredMessages || [];
-
     const locationUrl = message.location().url;
 
-    for (const [
-      locationUrlPattern,
-      ignoredMessagePatterns,
-    ] of locationUrlsToIgnoredMessages) {
+    for (const ignoredConsoleMessagesEntry of ignoredConsoleMessages) {
+      if ('pagePathname' in ignoredConsoleMessagesEntry) {
+        if (
+          ignoredConsoleMessagesEntry.pagePathname.test(pathname) &&
+          ignoredConsoleMessagesEntry.messages.some((pattern) =>
+            pattern.test(messageText),
+          )
+        ) {
+          return;
+        }
+
+        continue;
+      }
+
       if (
-        locationUrlPattern.test(locationUrl) &&
-        ignoredMessagePatterns.some((pattern) => pattern.test(messageText))
+        ignoredConsoleMessagesEntry.locationUrl.test(locationUrl) &&
+        ignoredConsoleMessagesEntry.messages.some((pattern) =>
+          pattern.test(messageText),
+        )
       ) {
         return;
       }
@@ -98,25 +116,34 @@ test('Assessor assesses students', async ({ page }) => {
   throwOnErrorsOrConsoleLogging(page);
 ```
 
-To disable errors for a specific path or URL, pass in the arrays `pagePathnamesToIgnoredMessages` or `locationUrlsToIgnoredMessages` (or adjust them in `util/playwright.ts`): 
+To disable errors for a specific path or URL, pass in the arrays `ignoredErrors` or `ignoredConsoleMessages` (or adjust them in `util/playwright.ts`): 
 
 ```ts
 throwOnErrorsOrConsoleLogging(page, {
-  pagePathnamesToIgnoredMessages: [
-    [
-      /^\/admin\/student-assessments-with-a-typo-in-it$/,
-      [
+  ignoredErrors: [
+    {
+      pagePathname: /^\/video$/,
+      messages: [
+        // Ignore video source load errors
+        /^Failed to load because no supported source was found.$/,
+      ],
+    },
+  ],
+  ignoredConsoleMessages: [
+    {
+      pagePathname: /^\/admin\/student-assessments-with-a-typo-in-it$/,
+      messages: [
         // Ignore expected HTTP 404 errors
         /^Failed to load resource: the server responded with a status of 404 \(Not Found\)$/,
       ],
-    ],
-  ],
-  locationUrlsToIgnoredMessages: [
-    /^https:\/\/mozilla\.github\.io\/pdf\.js\/build\/pdf\.mjs$/,
-    [
-      // Ignore PDF.js console.error() message
-      /^Warning: Setting up fake worker\.$/,
-    ],
+    },
+    {
+      locationUrl: /^https:\/\/mozilla\.github\.io\/pdf\.js\/build\/pdf\.mjs$/,
+      messages: [
+        // Ignore PDF.js console.error() message
+        /^Warning: Setting up fake worker\.$/,
+      ],
+    }
   ],
 });
 ```
