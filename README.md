@@ -67,23 +67,23 @@ export function throwOnErrorsOrConsoleLogging(
     throw new Error(`${errorMessage} (page pathname: ${pathname})`);
   });
 
-  page.on('console', (message) => {
-    const messageText = message.text();
+  page.on('console', (consoleMessage) => {
+    const messageText = consoleMessage.text();
 
     const ignoredConsoleMessages: Exclude<
       typeof options,
       undefined
     >['ignoredConsoleMessages'] = options?.ignoredConsoleMessages || [];
 
-    const pathname = new URL(message.page()?.url() || '').pathname;
-    const locationUrl = message.location().url;
+    const pathname = new URL(consoleMessage.page()?.url() || '').pathname;
+    const locationUrl = consoleMessage.location().url;
 
     for (const ignoredConsoleMessagesEntry of ignoredConsoleMessages) {
       if ('pagePathname' in ignoredConsoleMessagesEntry) {
         if (
           ignoredConsoleMessagesEntry.pagePathname.test(pathname) &&
-          ignoredConsoleMessagesEntry.messages.some((pattern) =>
-            pattern.test(messageText),
+          ignoredConsoleMessagesEntry.messages.some((message) =>
+            message.test(messageText),
           )
         ) {
           return;
@@ -94,8 +94,8 @@ export function throwOnErrorsOrConsoleLogging(
 
       if (
         ignoredConsoleMessagesEntry.locationUrl.test(locationUrl) &&
-        ignoredConsoleMessagesEntry.messages.some((pattern) =>
-          pattern.test(messageText),
+        ignoredConsoleMessagesEntry.messages.some((message) =>
+          message.test(messageText),
         )
       ) {
         return;
