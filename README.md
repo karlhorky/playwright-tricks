@@ -64,7 +64,7 @@ export function throwOnErrorsOrConsoleLogging(
       }
     }
 
-    throw error;
+    throw new Error(`${errorMessage} (page pathname: ${pathname})`);
   });
 
   page.on('console', (message) => {
