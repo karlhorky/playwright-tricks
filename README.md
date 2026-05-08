@@ -116,7 +116,7 @@ test('Assessor assesses students', async ({ page }) => {
   throwOnErrorsOrConsoleLogging(page);
 ```
 
-To disable errors for a specific path or URL, pass in the arrays `ignoredErrors` or `ignoredConsoleMessages` (or adjust them in `util/playwright.ts`): 
+To disable errors for a specific path or URL, pass in the arrays `ignoredErrors` or `ignoredConsoleMessages` (or adjust them in `util/playwright.ts`):
 
 ```ts
 throwOnErrorsOrConsoleLogging(page, {
@@ -143,7 +143,7 @@ throwOnErrorsOrConsoleLogging(page, {
         // Ignore PDF.js console.error() message
         /^Warning: Setting up fake worker\.$/,
       ],
-    }
+    },
   ],
 });
 ```
@@ -151,7 +151,7 @@ throwOnErrorsOrConsoleLogging(page, {
 Example Playwright logs after failure:
 
 ```
-  1) playwright/pernExtensiveImmersiveStudentBrowses.spec.ts:95:3 › PERN Extensive (Immersive) student browses › PERN Extensive (Immersive) student browses 
+  1) playwright/pernExtensiveImmersiveStudentBrowses.spec.ts:95:3 › PERN Extensive (Immersive) student browses › PERN Extensive (Immersive) student browses
 
     Error: Failed to load resource: net::ERR_CONNECTION_REFUSED (page pathname: /pern-extensive-immersive-fall-2024-atvie/appointments/auth-129, location URL: http://localhost:3000/campuses/atvie?_rsc=15uxf)
 
@@ -169,7 +169,7 @@ Example Playwright logs after failure:
     ─────────────────────────────────────────────────────────────────────────────────────
 
   1 failed
-    playwright/pernExtensiveImmersiveStudentBrowses.spec.ts:95:3 › PERN Extensive (Immersive) student browses › PERN Extensive (Immersive) student browses 
+    playwright/pernExtensiveImmersiveStudentBrowses.spec.ts:95:3 › PERN Extensive (Immersive) student browses › PERN Extensive (Immersive) student browses
 ```
 
 ## Fail test on `webServer` stderr
@@ -222,7 +222,7 @@ chmod +x ./exit-on-stderr.ts
 
 ```diff
  import type { PlaywrightTestConfig } from '@playwright/test';
- 
+
  const config: PlaywrightTestConfig = {
    webServer: [
      {
@@ -254,7 +254,7 @@ Example Playwright logs when using `exit-on-stderr.ts` (ideally paired with [Fai
 [WebServer]   digest: '370942199'
 [WebServer] }
 [WebServer] [exit-on-stderr] Detected stderr output from child process, exiting.
-  1) playwright/pernExtensiveImmersiveStudentBrowses.spec.ts:95:3 › PERN Extensive (Immersive) student browses › PERN Extensive (Immersive) student browses 
+  1) playwright/pernExtensiveImmersiveStudentBrowses.spec.ts:95:3 › PERN Extensive (Immersive) student browses › PERN Extensive (Immersive) student browses
 
     Error: Failed to load resource: net::ERR_CONNECTION_REFUSED (page pathname: /pern-extensive-immersive-fall-2024-atvie/appointments/auth-129, location URL: http://localhost:3000/campuses/atvie?_rsc=15uxf)
 
@@ -272,7 +272,7 @@ Example Playwright logs when using `exit-on-stderr.ts` (ideally paired with [Fai
     ─────────────────────────────────────────────────────────────────────────────────────
 
   1 failed
-    playwright/pernExtensiveImmersiveStudentBrowses.spec.ts:95:3 › PERN Extensive (Immersive) student browses › PERN Extensive (Immersive) student browses 
+    playwright/pernExtensiveImmersiveStudentBrowses.spec.ts:95:3 › PERN Extensive (Immersive) student browses › PERN Extensive (Immersive) student browses
 ```
 
 Downsides:
@@ -305,7 +305,7 @@ register('@mdx-js/node-loader', import.meta.url);
 const config: PlaywrightTestConfig = {
   // ...
 };
- 
+
 export default config;
 ```
 
@@ -327,7 +327,7 @@ test('example test', () => {
 
 Snapshot files without newlines at the ends are problematic because commonly-used software like the GitHub "Edit in Place" feature and other common editor configurations will silently add a newline in the edge case of editing a snapshot file, which will cause the snapshot test to fail in a confusing way.
 
-Also, [POSIX and *nix tools assume newlines at the end of files](https://stackoverflow.com/questions/729692/why-should-text-files-end-with-a-newline), so Playwright text snapshots will not play nice with those.
+Also, [POSIX and \*nix tools assume newlines at the end of files](https://stackoverflow.com/questions/729692/why-should-text-files-end-with-a-newline), so Playwright text snapshots will not play nice with those.
 
 Unless the Playwright team reverses [their "working as intended" decision](https://github.com/microsoft/playwright/issues/33416#issuecomment-2455936144) and adds a fix to make text snapshots interoperable Create interoperable, this needs to be worked around.
 
@@ -408,14 +408,17 @@ test('PDF has screenshot', async ({ page }) => {
       </head>
       <body>
         <canvas></canvas>
-        <script src="https://mozilla.github.io/pdf.js/build/pdf.mjs" type="module"></script>
+        <script
+          src="https://mozilla.github.io/pdf.js/build/pdf.mjs"
+          type="module"
+        ></script>
         <script type="module">
           pdfjsLib.GlobalWorkerOptions.workerSrc =
             'https://mozilla.github.io/pdf.js/build/pdf.worker.mjs';
 
           try {
             const pdf = await pdfjsLib.getDocument(
-               'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/examples/learning/helloworld.pdf',
+              'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/examples/learning/helloworld.pdf',
             ).promise;
 
             const page = await pdf.getPage(1);
@@ -512,3 +515,29 @@ await expect(img).not.toHaveJSProperty('naturalWidth', 0);
 ```
 
 Source: https://github.com/microsoft/playwright/issues/6046#issuecomment-1803609118
+
+## Update snapshot screenshots with AI CLIs
+
+To update [Playwright screenshot snapshots](https://playwright.dev/docs/test-snapshots), prompt an AI CLI like [Codex CLI](https://developers.openai.com/codex/cli), [OpenCode](https://opencode.ai/), [Gemini CLI](https://geminicli.com/), [GitHub Copilot CLI](https://github.com/features/copilot/cli), [Qwen Code](https://qwen.ai/qwencode), [Kimi Code](https://www.kimi.com/code/docs/en/kimi-code-cli/getting-started.html) or [Claude Code](https://code.claude.com/docs/en/overview) to review each failing screenshot comparison and copy accepted actual screenshots into the snapshot baseline:
+
+```txt
+go through the failing snapshots in the test results one by one and prompt me to choose one of the following three options:
+1. open the files for me to review in my default image viewer (expected, actual, diff) - if I choose this option, re-prompt me with the three options
+2. update the baseline (copy the actual result to the snapshots)
+3. skip
+```
+
+Sometimes snapshots on CI can differ vs snapshots in your local environment (eg. when browser rendering on Linux in GitHub Actions differs from local macOS). To update the snapshots from a failing GitHub Actions CI run, also ask the AI to download the artifacts from the URL:
+
+```txt
+download the artifacts from <GitHub Actions run URL> and unzip them in `/tmp`. go through the failing snapshots in the test results one by one and prompt me to choose one of the following three options:
+1. open the files for me to review in my default image viewer (expected, actual, diff) - if I choose this option, re-prompt me with the three options
+2. update the baseline (copy the actual result to the snapshots)
+3. skip
+```
+
+Example URL for failing GitHub Actions CI run with artifacts:
+
+- https://github.com/microsoft/playwright/actions/runs/25527326769
+
+TODO: add screenshot here with alt "Failing GitHub Actions run with artifacts"
