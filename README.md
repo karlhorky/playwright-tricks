@@ -538,4 +538,4 @@ Example URL for failing GitHub Actions CI run with artifacts:
 
 - https://github.com/microsoft/playwright/actions/runs/25527326769
 
-TODO: add screenshot here with alt "Failing GitHub Actions run with artifacts"
+<img width="1439" height="551" alt="Failing GitHub Actions run with artifacts" src="https://github.com/user-attachments/assets/2e8784a5-f768-4d44-b73f-3887e59cb597" />
