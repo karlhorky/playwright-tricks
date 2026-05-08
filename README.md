@@ -518,6 +518,8 @@ Source: https://github.com/microsoft/playwright/issues/6046#issuecomment-1803609
 
 ## Update snapshot screenshots with AI CLIs
 
+Playwright [will not add a CLI tool](https://github.com/microsoft/playwright/issues/14883) to interactively review and update [screenshot snapshots](https://playwright.dev/docs/test-snapshots).
+
 To update [Playwright screenshot snapshots](https://playwright.dev/docs/test-snapshots), prompt an AI CLI like [Codex CLI](https://developers.openai.com/codex/cli), [OpenCode](https://opencode.ai/), [Gemini CLI](https://geminicli.com/), [GitHub Copilot CLI](https://github.com/features/copilot/cli), [Qwen Code](https://qwen.ai/qwencode), [Kimi Code](https://www.kimi.com/code/docs/en/kimi-code-cli/getting-started.html) or [Claude Code](https://code.claude.com/docs/en/overview) to review each failing screenshot comparison and copy accepted actual screenshots into the snapshot baseline:
 
 > go through the failing snapshots in the test results one by one and prompt me to choose one of the following three options:
