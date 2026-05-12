@@ -530,7 +530,7 @@ To update [Playwright screenshot snapshots](https://playwright.dev/docs/test-sna
 
 Sometimes snapshots on CI can differ vs snapshots in your local environment (eg. when browser rendering on Linux in GitHub Actions differs from local macOS). To update the snapshots from a failing GitHub Actions CI run, also ask the AI to download the artifacts from the URL:
 
-> download the artifacts from <GitHub Actions run URL> and unzip them in `/tmp`. go through the failing snapshots in the test results one by one and prompt me to choose one of the following three options:
+> download the artifacts from <GitHub Actions run URL> and unzip them in a temporary location which will get automatically cleared. go through the failing snapshots in the test results one by one and prompt me to choose one of the following three options:
 >
 > 1. open the files for me to review in my default image viewer (expected, actual, diff) - if I choose this option, re-prompt me with the three options
 > 2. update the baseline (copy the actual result to the snapshots)
