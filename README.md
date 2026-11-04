@@ -294,12 +294,13 @@ For example, [`@nodejs-loaders/media`](https://www.npmjs.com/package/@nodejs-loa
 `playwright.config.ts`
 
 ```ts
-import { register } from 'node:module';
+import { register, registerHooks } from 'node:module';
+import * as nodejsLoadersMedia from '@nodejs-loaders/media/media.loader.mjs';
 import type { PlaywrightTestConfig } from '@playwright/test';
 
 // Node.js ESM loaders for image files and MDX imported by test files
 // - https://github.com/microsoft/playwright/issues/26822#issuecomment-2692835230
-register('@nodejs-loaders/media', import.meta.url);
+registerHooks(nodejsLoadersMedia);
 register('@mdx-js/node-loader', import.meta.url);
 
 const config: PlaywrightTestConfig = {
@@ -309,7 +310,7 @@ const config: PlaywrightTestConfig = {
 export default config;
 ```
 
-To import SCSS or other file types in Playwright tests, find a suitable Node.js ESM loader for the file type and use `register()` from `node:module` in `playwright.config.ts`.
+To import SCSS or other file types in Playwright tests, find a suitable Node.js ESM loader for the file type and use `registerHooks()` from `node:module` in `playwright.config.ts` (or `register()` for loaders with only async hooks).
 
 ## Interoperable text snapshots
 
